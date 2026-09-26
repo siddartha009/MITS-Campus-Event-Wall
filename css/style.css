@@ -191,6 +191,15 @@ h1.page-title{color:var(--ink);font-weight:700;margin-bottom:4px;}
 }
 .form-box input:focus, .form-box select:focus, .form-box textarea:focus{outline:none;border-color:var(--primary);}
 .form-box textarea{min-height:90px;resize:vertical;}
+.password-field{position:relative;}
+.password-field input{padding-right:64px;}
+.toggle-password{
+  position:absolute;top:50%;right:6px;transform:translateY(-50%);
+  background:none;border:none;color:var(--primary);font-weight:800;font-size:.78em;
+  cursor:pointer;padding:5px 10px;border-radius:8px;font-family:inherit;
+}
+.toggle-password:hover{background:#f1eeff;}
+.form-link-row{margin-top:10px;font-size:.85em;}
 .form-msg{margin-top:14px;padding:10px 14px;border-radius:var(--radius-sm);font-size:.9em;font-weight:700;}
 .form-msg.ok{background:#e3fbea;color:#1e9e52;}
 .form-msg.err{background:#ffe6e6;color:#d63636;}

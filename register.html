@@ -32,7 +32,17 @@
       <label>Email</label>
       <input id="r-email" type="email">
       <label>Password</label>
-      <input id="r-password" type="password">
+      <div class="password-field">
+        <input id="r-password" type="password">
+        <button type="button" class="toggle-password" id="r-password-toggle">Show</button>
+      </div>
+      <label>Confirm Password</label>
+      <div class="password-field">
+        <input id="r-password2" type="password">
+        <button type="button" class="toggle-password" id="r-password2-toggle">Show</button>
+      </div>
+      <label>Admin invite code <span style="font-weight:400;color:var(--ink-light);">(optional — leave blank unless you were given one)</span></label>
+      <input id="r-admin-code" type="text" placeholder="Only if you're setting up an admin account">
       <button class="btn" id="r-submit" style="margin-top:18px;">Create Account</button>
       <div id="r-msg" class="form-msg" style="display:none;"></div>
       <p style="margin-top:14px;font-size:.9em;">Already have an account? <a href="login.html">Log in</a>.</p>

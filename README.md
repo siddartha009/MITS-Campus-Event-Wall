@@ -22,10 +22,9 @@ Easiest path (no CLI needed): in the Firebase console, **Firestore Database → 
 `storage.rules` is kept in this repo for reference / in case you later switch to real Storage (e.g. once you're comfortable enabling Blaze), but it isn't deployed or used by the app as it stands.
 
 ## 4. Create your admin account
-There's no admin sign-up flow on purpose. To make yourself an admin:
-1. Register normally on the site (this creates a `users/{uid}` doc with `role: "organizer"`).
-2. In the Firebase console → Firestore → `users` collection → open your user doc → change `role` to `admin`.
-3. Refresh the site — the "Admin Review" nav link will appear for that account.
+Two ways to get an admin account:
+- **Manual (most secure, recommended):** register normally on the site (creates a `users/{uid}` doc with `role: "organizer"`), then in the Firebase console → Firestore → `users` collection → open your doc → change `role` to `admin`. Refresh the site and "Admin Review" appears in the nav.
+- **Invite code (convenient, less secure):** the register page has an optional "Admin invite code" field. Enter the code set as `ADMIN_INVITE_CODE` in `js/register.js` (default: `mits-admin-2026` — change this before deploying) to get `role: "admin"` immediately on sign-up. Since this code ships in the browser JS, anyone who reads the page source can find it — fine for a low-stakes campus project, but don't rely on it if you need real access control.
 
 ## 5. Run it
 This is plain static HTML/JS with ES modules, so it needs to be served over `http://` (not opened as a `file://` path) or the module imports will be blocked by the browser. Easiest options:

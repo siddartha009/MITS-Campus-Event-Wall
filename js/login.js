@@ -1,5 +1,7 @@
-import { auth } from "./common.js";
+import { auth, wirePasswordToggle } from "./common.js";
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+wirePasswordToggle("l-password-toggle", "l-password");
 
 document.getElementById("l-submit").addEventListener("click", async () => {
   const msg = document.getElementById("l-msg");

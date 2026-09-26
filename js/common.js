@@ -188,3 +188,16 @@ export function escapeHtml(str) {
   d.textContent = str ?? "";
   return d.innerHTML;
 }
+
+// Wires a "Show/Hide" button next to a password input. Call once per
+// password field on pages that have one.
+export function wirePasswordToggle(btnId, inputId) {
+  const btn = document.getElementById(btnId);
+  const input = document.getElementById(inputId);
+  if (!btn || !input) return;
+  btn.addEventListener("click", () => {
+    const showing = input.type === "text";
+    input.type = showing ? "password" : "text";
+    btn.textContent = showing ? "Show" : "Hide";
+  });
+}
