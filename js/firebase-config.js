@@ -1,9 +1,8 @@
-// Replace these with the values from Firebase Console > Project settings > General > Your apps > SDK setup and configuration
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBgqtFcoO0TTqc0DgJWRsTb7VPAudhrkCo",
+  authDomain: "campus-event-wall.firebaseapp.com",
+  projectId: "campus-event-wall",
+  storageBucket: "campus-event-wall.firebasestorage.app",
+  messagingSenderId: "531971664709",
+  appId: "1:531971664709:web:db5f04f11235cb9c6dac2c"
 };

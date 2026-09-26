@@ -50,7 +50,8 @@ export let currentProfile = null;
 let authReadyResolve;
 export const authReady = new Promise(res => (authReadyResolve = res));
 
-if (auth) onAuthStateChanged(auth, async (user) => {
+if (auth) {
+  onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   currentProfile = null;
   if (user) {
@@ -61,7 +62,13 @@ if (auth) onAuthStateChanged(auth, async (user) => {
   }
   renderNavAuthState();
   authReadyResolve();
-});
+  });
+} else {
+  // Firebase never initialized (bad/missing config) — resolve authReady anyway so
+  // requireLogin()/requireAdmin() don't hang forever waiting for an auth state
+  // that will never arrive.
+  authReadyResolve();
+}
 
 function renderNavAuthState() {
   const loginLink = document.getElementById("nav-login");
