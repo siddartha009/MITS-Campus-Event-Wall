@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create Account — Campus Event Wall</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand">📌 Campus <span>Event Wall</span></div>
+    <nav>
+      <a class="navlink" href="index.html">Home</a>
+      <a class="navlink" href="calendar.html">Calendar</a>
+      <a class="navlink" id="nav-organize" href="organize.html">Organize Event</a>
+      <a class="navlink" id="nav-admin" href="admin.html">Admin Review</a>
+      <a class="navlink" id="nav-login" href="login.html">Login</a>
+      <a class="navlink active" id="nav-register" href="register.html">Create Account</a>
+      <button class="navlink" id="nav-logout" style="display:none;">Logout</button>
+      <span class="user-pill" id="nav-user-pill" style="display:none;"></span>
+      <a class="navlink" href="https://mits.ac.in" target="_blank" rel="noopener">MITS Site</a>
+    </nav>
+  </div>
+
+  <div class="page">
+    <h1 class="page-title">Create Account</h1>
+    <div class="note form-box">
+      <label>Full name</label>
+      <input id="r-name" type="text">
+      <label>Roll number</label>
+      <input id="r-rollno" type="text">
+      <label>Email</label>
+      <input id="r-email" type="email">
+      <label>Password</label>
+      <input id="r-password" type="password">
+      <button class="btn" id="r-submit" style="margin-top:18px;">Create Account</button>
+      <div id="r-msg" class="form-msg" style="display:none;"></div>
+      <p style="margin-top:14px;font-size:.9em;">Already have an account? <a href="login.html">Log in</a>.</p>
+    </div>
+  </div>
+
+  <script type="module" src="js/register.js"></script>
+</body>
+</html>

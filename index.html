@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Event Wall — MITS Madanapalle</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand">📌 Campus <span>Event Wall</span></div>
+    <nav>
+      <a class="navlink active" href="index.html">Home</a>
+      <a class="navlink" href="calendar.html">Calendar</a>
+      <a class="navlink" id="nav-organize" href="organize.html">Organize Event</a>
+      <a class="navlink" id="nav-admin" href="admin.html">Admin Review</a>
+      <a class="navlink" id="nav-login" href="login.html">Login</a>
+      <a class="navlink" id="nav-register" href="register.html">Create Account</a>
+      <button class="navlink" id="nav-logout" style="display:none;">Logout</button>
+      <span class="user-pill" id="nav-user-pill" style="display:none;"></span>
+      <a class="navlink" href="https://mits.ac.in" target="_blank" rel="noopener">MITS Site</a>
+    </nav>
+  </div>
+
+  <div class="page">
+    <h1 class="page-title">The Wall</h1>
+    <p class="subtitle">Everything happening around campus — pinned live.</p>
+
+    <div class="controls-row">
+      <input class="search-input" id="search" placeholder="Search events by title or description...">
+      <div id="chip-row" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
+
+    <div class="home-tabs" id="home-tabs" role="tablist">
+      <button class="tab-btn active" data-tab="highlights" role="tab" aria-selected="true">
+        <span class="tab-icon">⭐</span><span class="tab-label">Highlights</span>
+      </button>
+      <button class="tab-btn" data-tab="upcoming" role="tab" aria-selected="false">
+        <span class="tab-icon">📅</span><span class="tab-label">Upcoming</span>
+      </button>
+      <button class="tab-btn" data-tab="completed" role="tab" aria-selected="false">
+        <span class="tab-icon">✅</span><span class="tab-label">Completed</span>
+      </button>
+    </div>
+
+    <div class="tab-panel" id="panel-highlights">
+      <div class="event-grid" id="highlights-grid"></div>
+    </div>
+    <div class="tab-panel" id="panel-upcoming" hidden>
+      <div class="event-grid" id="upcoming-grid"></div>
+    </div>
+    <div class="tab-panel" id="panel-completed" hidden>
+      <div class="event-grid" id="completed-grid"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/home.js"></script>
+</body>
+</html>

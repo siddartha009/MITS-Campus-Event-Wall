@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == uid
+                    && request.resource.data.role == "organizer";
+      allow update, delete: if false; // role changes done manually in console
+    }
+
+    match /events/{eventId} {
+      allow read: if resource.data.status == "approved"
+                  || (isSignedIn() && resource.data.organizerId == request.auth.uid)
+                  || isAdmin();
+
+      allow create: if isSignedIn()
+                    && request.resource.data.organizerId == request.auth.uid
+                    && request.resource.data.status == "pending";
+
+      // admin: approve/reject (status change or delete)
+      allow update: if isAdmin()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(["status"]);
+
+      allow delete: if isAdmin();
+
+      // like/unlike: any signed-in user may toggle only their own uid in likedBy
+      allow update: if isSignedIn()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["likedBy"])
+                    && request.resource.data.likedBy.toSet()
+                         .difference(resource.data.likedBy.toSet())
+                         .difference([request.auth.uid]).size() == 0
+                    && resource.data.likedBy.toSet()
+                         .difference(request.resource.data.likedBy.toSet())
+                         .difference([request.auth.uid]).size() == 0;
+
+      // recap: only the organizer, only after the event date has passed
+      allow update: if isSignedIn()
+                    && resource.data.organizerId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["recap"])
+                    && resource.data.date < request.time.toString().substring(0, 10);
+    }
+  }
+}

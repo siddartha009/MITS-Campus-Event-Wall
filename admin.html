@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Review — Campus Event Wall</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand">📌 Campus <span>Event Wall</span></div>
+    <nav>
+      <a class="navlink" href="index.html">Home</a>
+      <a class="navlink" href="calendar.html">Calendar</a>
+      <a class="navlink" id="nav-organize" href="organize.html">Organize Event</a>
+      <a class="navlink active" id="nav-admin" href="admin.html">Admin Review</a>
+      <a class="navlink" id="nav-login" href="login.html">Login</a>
+      <a class="navlink" id="nav-register" href="register.html">Create Account</a>
+      <button class="navlink" id="nav-logout" style="display:none;">Logout</button>
+      <span class="user-pill" id="nav-user-pill" style="display:none;"></span>
+      <a class="navlink" href="https://mits.ac.in" target="_blank" rel="noopener">MITS Site</a>
+    </nav>
+  </div>
+
+  <div class="page">
+    <h1 class="page-title">Admin Review</h1>
+    <p class="subtitle" id="admin-msg">Pending event submissions.</p>
+    <div id="pending-list"></div>
+  </div>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

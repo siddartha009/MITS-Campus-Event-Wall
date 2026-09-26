@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Organize Event — Campus Event Wall</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand">📌 Campus <span>Event Wall</span></div>
+    <nav>
+      <a class="navlink" href="index.html">Home</a>
+      <a class="navlink" href="calendar.html">Calendar</a>
+      <a class="navlink active" id="nav-organize" href="organize.html">Organize Event</a>
+      <a class="navlink" id="nav-admin" href="admin.html">Admin Review</a>
+      <a class="navlink" id="nav-login" href="login.html">Login</a>
+      <a class="navlink" id="nav-register" href="register.html">Create Account</a>
+      <button class="navlink" id="nav-logout" style="display:none;">Logout</button>
+      <span class="user-pill" id="nav-user-pill" style="display:none;"></span>
+      <a class="navlink" href="https://mits.ac.in" target="_blank" rel="noopener">MITS Site</a>
+    </nav>
+  </div>
+
+  <div class="page">
+    <h1 class="page-title">Organize an Event</h1>
+    <p class="subtitle" id="login-msg">Submit your event for admin approval — it'll appear on the wall once approved.</p>
+
+    <div class="note form-box" id="form-wrap">
+      <label>Event name</label>
+      <input id="f-title" type="text" required>
+
+      <label>Type</label>
+      <select id="f-type">
+        <option>Fest</option>
+        <option>Deadline</option>
+        <option>Seminar</option>
+        <option>Hackathon</option>
+        <option>Camp</option>
+      </select>
+
+      <label>Date</label>
+      <input id="f-date" type="date" required>
+
+      <label>Time</label>
+      <input id="f-time" type="time">
+
+      <label>Location</label>
+      <input id="f-location" type="text">
+
+      <label>Poster image</label>
+      <input id="f-poster" type="file" accept="image/*">
+
+      <label>Description</label>
+      <textarea id="f-description"></textarea>
+
+      <label>Registration link (optional)</label>
+      <input id="f-reglink" type="url" placeholder="https://...">
+
+      <button class="btn" id="f-submit" style="margin-top:18px;">Submit for Approval</button>
+      <div id="f-msg" class="form-msg" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/organize.js"></script>
+</body>
+</html>

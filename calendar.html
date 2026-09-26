@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendar — Campus Event Wall</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand">📌 Campus <span>Event Wall</span></div>
+    <nav>
+      <a class="navlink" href="index.html">Home</a>
+      <a class="navlink active" href="calendar.html">Calendar</a>
+      <a class="navlink" id="nav-organize" href="organize.html">Organize Event</a>
+      <a class="navlink" id="nav-admin" href="admin.html">Admin Review</a>
+      <a class="navlink" id="nav-login" href="login.html">Login</a>
+      <a class="navlink" id="nav-register" href="register.html">Create Account</a>
+      <button class="navlink" id="nav-logout" style="display:none;">Logout</button>
+      <span class="user-pill" id="nav-user-pill" style="display:none;"></span>
+      <a class="navlink" href="https://mits.ac.in" target="_blank" rel="noopener">MITS Site</a>
+    </nav>
+  </div>
+
+  <div class="page">
+    <h1 class="page-title">Calendar</h1>
+    <p class="subtitle">Approved events, one month back to one month ahead.</p>
+
+    <div class="note" style="max-width:700px;margin:0 auto;">
+      <div class="cal-header">
+        <button class="btn secondary" id="prev-month">&larr; Prev</button>
+        <h2 id="cal-month-label" style="margin:0;"></h2>
+        <button class="btn secondary" id="next-month">Next &rarr;</button>
+      </div>
+      <div class="cal-grid" id="cal-dow-row"></div>
+      <div class="cal-grid" id="cal-grid" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="day-panel" id="day-panel"></div>
+  </div>
+
+  <script type="module" src="js/calendar.js"></script>
+</body>
+</html>
