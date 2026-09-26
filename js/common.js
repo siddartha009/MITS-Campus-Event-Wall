@@ -5,9 +5,6 @@ import {
 import {
   getFirestore, doc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-import {
-  getStorage
-} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 function showConfigError(message) {
@@ -22,7 +19,7 @@ function showConfigError(message) {
   if (document.body) document.body.prepend(banner);
 }
 
-let app, authInstance, dbInstance, storageInstance;
+let app, authInstance, dbInstance;
 try {
   if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith("YOUR_")) {
     throw new Error("firebase-config.js still has placeholder values");
@@ -30,7 +27,6 @@ try {
   app = initializeApp(firebaseConfig);
   authInstance = getAuth(app);
   dbInstance = getFirestore(app);
-  storageInstance = getStorage(app);
 } catch (e) {
   console.error("Firebase init failed:", e);
   showConfigError(
@@ -40,7 +36,30 @@ try {
 }
 export const auth = authInstance;
 export const db = dbInstance;
-export const storage = storageInstance;
+
+// Images are stored as compressed base64 data URLs directly inside Firestore
+// documents (no Cloud Storage / Blaze plan required). Resizes to maxDim on the
+// longest side and re-encodes as JPEG at the given quality so a typical photo
+// lands well under Firestore's 1MB-per-document limit.
+export function fileToCompressedDataURL(file, maxDim = 900, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.onload = () => { img.src = reader.result; };
+    img.onerror = () => reject(new Error("Could not decode image"));
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height && width > maxDim) { height = Math.round(height * (maxDim / width)); width = maxDim; }
+      else if (height > maxDim) { width = Math.round(width * (maxDim / height)); height = maxDim; }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 export const TYPES = ["Fest", "Deadline", "Seminar", "Hackathon", "Camp"];
 

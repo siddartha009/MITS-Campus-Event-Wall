@@ -1,23 +1,25 @@
 # Campus Event Wall — MITS Madanapalle
 
-Plain HTML/CSS/JS frontend backed by Firebase (Auth + Firestore + Storage).
+Plain HTML/CSS/JS frontend backed by Firebase (Auth + Firestore only — no Cloud Storage, see note below).
+
+## Why no Firebase Storage
+As of Feb 2026, Firebase requires the paid **Blaze** plan (a linked billing card) just to use Cloud Storage, even if usage stays free. To avoid that, this project skips Storage entirely: poster and recap photos are compressed client-side and stored as base64 image data directly inside the Firestore document. Firestore itself stays fully free on the no-card **Spark** plan. The trade-off is Firestore's 1MB-per-document limit, so images are auto-resized/compressed on upload (poster ~900px, recap/winner photos smaller) and the recap form warns you before saving if a document would exceed that limit.
 
 ## 1. Create the Firebase project
 1. Go to https://console.firebase.google.com → **Add project**.
 2. In the project, go to **Build → Authentication → Sign-in method** and enable **Email/Password**.
 3. Go to **Build → Firestore Database → Create database** (start in production mode — you'll paste the rules below).
-4. Go to **Build → Storage → Get started** (also production mode).
-5. Go to **Project settings → General → Your apps → Add app → Web (</>)**, register it, and copy the `firebaseConfig` object it gives you.
+4. Go to **Project settings → General → Your apps → Add app → Web (</>)**, register it, and copy the `firebaseConfig` object it gives you.
 
 ## 2. Add your config
 Open `js/firebase-config.js` and paste your real values in place of the placeholders.
 
 ## 3. Deploy the security rules
-Easiest path (no CLI needed): in the Firebase console,
-- **Firestore Database → Rules** tab → paste the contents of `firestore.rules` → Publish.
-- **Storage → Rules** tab → paste the contents of `storage.rules` → Publish.
+Easiest path (no CLI needed): in the Firebase console, **Firestore Database → Rules** tab → paste the contents of `firestore.rules` → Publish.
 
-(Or, if you have the Firebase CLI: `firebase deploy --only firestore:rules,storage:rules`.)
+(Or, if you have the Firebase CLI: `firebase deploy --only firestore:rules`.)
+
+`storage.rules` is kept in this repo for reference / in case you later switch to real Storage (e.g. once you're comfortable enabling Blaze), but it isn't deployed or used by the app as it stands.
 
 ## 4. Create your admin account
 There's no admin sign-up flow on purpose. To make yourself an admin:
@@ -58,6 +60,6 @@ The rules in `firestore.rules` implement the spec (public read of approved event
 - `organize.html` / `js/organize.js` — Event submission form
 - `admin.html` / `js/admin.js` — Pending-event approval queue
 - `login.html`, `register.html` — Firebase Auth email/password
-- `js/common.js` — Firebase init, auth-state nav wiring, date/format helpers
+- `js/common.js` — Firebase init, auth-state nav wiring, date/format helpers, image compression
 - `js/event-detail.js` — Shared event detail modal + recap view/edit (used by Home and Calendar)
-- `firestore.rules`, `storage.rules` — security rules to paste into the console
+- `firestore.rules` — security rules to paste into the console (`storage.rules` unused, kept for reference)

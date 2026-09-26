@@ -1,6 +1,5 @@
-import { db, storage, currentUser, formatDateTime, countdownText, isPast, escapeHtml } from "./common.js";
+import { db, currentUser, formatDateTime, countdownText, isPast, escapeHtml, fileToCompressedDataURL } from "./common.js";
 import { doc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
 
 let backdropEl = null;
 
@@ -128,12 +127,11 @@ async function saveRecap(ev, container) {
     const photoFiles = document.getElementById("rf-photos").files;
     const winnerPhotoFiles = document.getElementById("rf-winner-photos").files;
 
+    // Recap images are compressed smaller than the poster since several of
+    // them share one Firestore document (1MB limit per doc, no Storage used).
     const photoUrls = [...(ev.recap?.photos || [])];
     for (const file of photoFiles) {
-      const path = `recaps/${ev.id}/${Date.now()}_${file.name}`;
-      const sref = ref(storage, path);
-      await uploadBytes(sref, file);
-      photoUrls.push(await getDownloadURL(sref));
+      photoUrls.push(await fileToCompressedDataURL(file, 700, 0.6));
     }
 
     const testimonials = document.getElementById("rf-testimonials").value.split("\n")
@@ -147,10 +145,7 @@ async function saveRecap(ev, container) {
       .map(l => l.trim()).filter(Boolean);
     const winnerPhotoUrls = [];
     for (const file of winnerPhotoFiles) {
-      const path = `recaps/${ev.id}/winners/${Date.now()}_${file.name}`;
-      const sref = ref(storage, path);
-      await uploadBytes(sref, file);
-      winnerPhotoUrls.push(await getDownloadURL(sref));
+      winnerPhotoUrls.push(await fileToCompressedDataURL(file, 500, 0.6));
     }
     const winners = winnerLines.map((l, i) => {
       const [name, prize] = l.split("|").map(s => (s || "").trim());
@@ -158,6 +153,16 @@ async function saveRecap(ev, container) {
     });
 
     const recap = { summary, photos: photoUrls, testimonials, winners };
+
+    // Firestore documents cap out at 1MB. Everything here is base64 text, so
+    // check before writing rather than letting the write fail with a cryptic error.
+    const approxBytes = JSON.stringify(recap).length + (ev.posterUrl || "").length;
+    if (approxBytes > 900000) {
+      msg.className = "form-msg err";
+      msg.textContent = "This recap is too large for one Firestore document (Firestore's 1MB limit). Try fewer photos, or remove some existing ones first.";
+      return;
+    }
+
     await updateDoc(doc(db, "events", ev.id), { recap });
     ev.recap = recap;
     msg.className = "form-msg ok"; msg.textContent = "Recap saved.";

@@ -1,6 +1,5 @@
-import { db, storage, currentUser, requireLogin } from "./common.js";
-import { collection, addDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
+import { db, currentUser, requireLogin, fileToCompressedDataURL } from "./common.js";
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const loginMsg = document.getElementById("login-msg");
 const formWrap = document.getElementById("form-wrap");
@@ -29,22 +28,16 @@ document.getElementById("f-submit").addEventListener("click", async () => {
   }
 
   try {
-    const docRef = await addDoc(collection(db, "events"), {
+    const posterUrl = posterFile ? await fileToCompressedDataURL(posterFile) : "";
+    await addDoc(collection(db, "events"), {
       organizerId: currentUser.uid,
       title, type, date, time, location, description,
       registrationLink: registrationLink || null,
-      posterUrl: "",
+      posterUrl,
       status: "pending",
       likedBy: [],
       recap: { summary: "", photos: [], testimonials: [], winners: [] }
     });
-
-    if (posterFile) {
-      const sref = ref(storage, `posters/${docRef.id}_${posterFile.name}`);
-      await uploadBytes(sref, posterFile);
-      const url = await getDownloadURL(sref);
-      await updateDoc(doc(db, "events", docRef.id), { posterUrl: url });
-    }
 
     msg.className = "form-msg ok";
     msg.textContent = "Submitted for approval! You'll see it on the wall once an admin approves it.";
