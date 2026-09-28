@@ -21,10 +21,12 @@ Easiest path (no CLI needed): in the Firebase console, **Firestore Database → 
 
 `storage.rules` is kept in this repo for reference / in case you later switch to real Storage (e.g. once you're comfortable enabling Blaze), but it isn't deployed or used by the app as it stands.
 
-## 4. Create your admin account
-Two ways to get an admin account:
-- **Manual (most secure, recommended):** register normally on the site (creates a `users/{uid}` doc with `role: "organizer"`), then in the Firebase console → Firestore → `users` collection → open your doc → change `role` to `admin`. Refresh the site and "Admin Review" appears in the nav.
-- **Invite code (convenient, less secure):** the register page has an optional "Admin invite code" field. Enter the code set as `ADMIN_INVITE_CODE` in `js/register.js` (default: `mits-admin-2026` — change this before deploying) to get `role: "admin"` immediately on sign-up. Since this code ships in the browser JS, anyone who reads the page source can find it — fine for a low-stakes campus project, but don't rely on it if you need real access control.
+## 4. Create the accounts (admin + 3 organizers)
+1. Publish `firestore.rules` (Firestore → Rules → paste → Publish). It recognises the admin by email (`admin@mits.demo`).
+2. Open `setup.html` on your deployed site, choose a password, click **Create Accounts**. It creates `admin@mits.demo` (role admin) and `user1/2/3@mits.demo` (organizers).
+3. Log in at `login.html`. The admin sees "Admin Review" in the nav.
+4. Delete `setup.html` and `js/setup.js` afterwards.
+To use a different admin email, change it in both `firestore.rules` (`isAdminEmail`) and `js/setup.js` (`ADMIN_EMAIL`).
 
 ## 5. Run it
 This is plain static HTML/JS with ES modules, so it needs to be served over `http://` (not opened as a `file://` path) or the module imports will be blocked by the browser. Easiest options:

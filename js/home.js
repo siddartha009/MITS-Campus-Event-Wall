@@ -2,6 +2,7 @@ import { db, currentUser, TYPES, isUpcoming, isRecentlyCompleted, isInCurrentCal
   formatDateTime, countdownText, isPast, escapeHtml } from "./common.js";
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { openEventModal } from "./event-detail.js";
+import { getDemoEvents, showDemoBanner, ENABLE_DEMO_FALLBACK } from "./demo-data.js";
 
 let allEvents = [];
 let activeType = "All";
@@ -33,7 +34,7 @@ function matchesFilters(ev) {
 }
 
 function cardHtml(ev, tiltClass) {
-  const liked = currentUser && (ev.likedBy || []).includes(currentUser.uid);
+  const liked = (ev.likedBy || []).includes(currentUser ? currentUser.uid : "demo-visitor") && (currentUser || String(ev.id).startsWith("demo-"));
   const past = isPast(ev);
   return `
     <div class="note event-card ${tiltClass}" data-id="${ev.id}">
@@ -101,6 +102,7 @@ async function loadEvents() {
   } catch (e) {
     console.error("Failed to load events for home page:", e);
   }
+  if (ENABLE_DEMO_FALLBACK && !allEvents.length) { allEvents = getDemoEvents(); showDemoBanner(); }
   renderAll();
 }
 

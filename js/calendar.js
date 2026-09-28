@@ -1,8 +1,9 @@
 import { db, isUpcoming, isRecentlyCompleted, escapeHtml } from "./common.js";
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { openEventModal } from "./event-detail.js";
+import { getDemoEvents, showDemoBanner, ENABLE_DEMO_FALLBACK } from "./demo-data.js";
 
-const TYPE_COLORS = { Fest: "#ff6f91", Deadline: "#d64545", Seminar: "#3d7dca", Hackathon: "#8a4fd6", Camp: "#8c1d1d" };
+const TYPE_COLORS = { Fest: "#FF6B9D", Deadline: "#FF5252", Seminar: "#3DA8F5", Hackathon: "#8E5CFF", Camp: "#2ECC71" };
 
 let allEvents = [];
 let viewDate = new Date();
@@ -101,12 +102,11 @@ async function loadEvents() {
     const q = query(collection(db, "events"), where("status", "==", "approved"));
     const snap = await getDocs(q);
     allEvents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderMonth();
   } catch (e) {
     console.error("Failed to load events for calendar:", e);
-    document.getElementById("day-panel").innerHTML =
-      `<div class="note"><strong>Couldn't load events.</strong><p class="empty-note">Check your Firebase setup (see console for details).</p></div>`;
   }
+  if (ENABLE_DEMO_FALLBACK && !allEvents.length) { allEvents = getDemoEvents(); showDemoBanner(); }
+  renderMonth();
 }
 
 loadEvents();
