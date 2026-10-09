@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Admin Review — Campus Event Wall</title>
+<title>Faculty approvals — Campus Event Wall</title>
 <meta name="theme-color" content="#5e3f22">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -15,7 +15,8 @@
       <a class="navlink" href="calendar.html">Calendar</a>
       <a class="navlink" id="nav-polls" style="display:none;" href="polls.html">Polls</a>
       <a class="navlink" id="nav-organize" style="display:none;" href="organize.html">Organize Event</a>
-      <a class="navlink active" id="nav-admin" style="display:none;" href="admin.html">Admin Review</a>
+      <a class="navlink" id="nav-admin" style="display:none;" href="admin.html">Admin Review</a>
+      <a class="navlink active" id="nav-approvals" style="display:none;" href="approvals.html">Approvals</a>
       <a class="navlink" id="nav-login" style="display:none;" href="login.html">Login</a>
       <a class="navlink" id="nav-register" style="display:none;" href="register.html">Create Account</a>
       <button class="navlink" id="nav-logout" style="display:none;">Logout</button>
@@ -25,11 +26,11 @@
   </div>
 
   <div class="page">
-    <h1 class="page-title">Admin Review</h1>
-    <p class="subtitle" id="admin-msg">Pending event submissions.</p>
-    <div id="pending-list"></div>
+    <h1 class="page-title">Faculty approvals</h1>
+    <p class="subtitle" id="ap-msg">Approve or reject faculty accounts once their mail is verified.</p>
+    <div id="ap-list"></div>
   </div>
 
-  <script type="module" src="js/admin.js"></script>
+  <script type="module" src="js/approvals.js"></script>
 </body>
 </html>

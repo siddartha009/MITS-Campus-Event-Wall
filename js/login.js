@@ -13,6 +13,8 @@ document.getElementById("l-submit").addEventListener("click", async () => {
     msg.className = "form-msg ok"; msg.textContent = "Logged in! Redirecting...";
     setTimeout(() => (window.location.href = "index.html"), 600);
   } catch (e) {
-    msg.className = "form-msg err"; msg.textContent = "Login failed: " + e.message;
+    const wrong = ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-email"];
+    msg.className = "form-msg err";
+    msg.textContent = wrong.includes(e.code) ? "Wrong mail or password. Check them and try again." : "Login failed: " + e.message;
   }
 });

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Organize Event — Campus Event Wall</title>
+<meta name="theme-color" content="#5e3f22">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -12,10 +13,12 @@
     <nav>
       <a class="navlink" href="index.html">Home</a>
       <a class="navlink" href="calendar.html">Calendar</a>
-      <a class="navlink active" id="nav-organize" href="organize.html">Organize Event</a>
-      <a class="navlink" id="nav-admin" href="admin.html">Admin Review</a>
-      <a class="navlink" id="nav-login" href="login.html">Login</a>
-      <a class="navlink" id="nav-register" href="register.html">Create Account</a>
+      <a class="navlink" id="nav-polls" style="display:none;" href="polls.html">Polls</a>
+      <a class="navlink active" id="nav-organize" style="display:none;" href="organize.html">Organize Event</a>
+      <a class="navlink" id="nav-admin" style="display:none;" href="admin.html">Admin Review</a>
+      <a class="navlink" id="nav-approvals" style="display:none;" href="approvals.html">Approvals</a>
+      <a class="navlink" id="nav-login" style="display:none;" href="login.html">Login</a>
+      <a class="navlink" id="nav-register" style="display:none;" href="register.html">Create Account</a>
       <button class="navlink" id="nav-logout" style="display:none;">Logout</button>
       <span class="user-pill" id="nav-user-pill" style="display:none;"></span>
       <a class="navlink" href="https://mits.ac.in" target="_blank" rel="noopener">MITS Site</a>
@@ -31,13 +34,37 @@
       <input id="f-title" type="text" required>
 
       <label>Type</label>
-      <select id="f-type">
-        <option>Fest</option>
-        <option>Deadline</option>
-        <option>Seminar</option>
-        <option>Hackathon</option>
-        <option>Camp</option>
+      <select id="f-type"></select>
+
+      <label>Who is this event for?</label>
+      <select id="f-level">
+        <option value="college">College level — open to every department</option>
+        <option value="department">Department level — one department only</option>
+        <option value="inter-college">Inter-college — students from other colleges too</option>
       </select>
+      <div id="f-dept-wrap" style="display:none;">
+        <label>Department</label>
+        <select id="f-dept"></select>
+      </div>
+      <div id="f-inter-wrap" class="level-fields" style="display:none;">
+        <h3>Inter-college details</h3>
+        <label>Host college name</label>
+        <input id="f-ic-college" type="text" placeholder="College hosting the event">
+        <label>City</label>
+        <input id="f-ic-city" type="text">
+        <label>Contact person and phone / mail</label>
+        <input id="f-ic-contact" type="text" placeholder="Name, phone or mail">
+        <label>Entry fee (optional)</label>
+        <input id="f-ic-fee" type="text" placeholder="e.g. ₹200 per team, or free">
+        <label>Last date to register (optional)</label>
+        <input id="f-ic-last" type="date">
+        <label>Team size (optional)</label>
+        <input id="f-ic-team" type="text" placeholder="e.g. 2 to 4 members">
+        <label>Eligibility (optional)</label>
+        <input id="f-ic-elig" type="text" placeholder="e.g. UG students, any branch">
+        <label>Brochure link (optional)</label>
+        <input id="f-ic-brochure" type="url" placeholder="https://...">
+      </div>
 
       <label>Date</label>
       <input id="f-date" type="date" required>

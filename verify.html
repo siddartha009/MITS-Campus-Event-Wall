@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Admin Review — Campus Event Wall</title>
+<title>Verify mail — Campus Event Wall</title>
 <meta name="theme-color" content="#5e3f22">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -15,7 +15,8 @@
       <a class="navlink" href="calendar.html">Calendar</a>
       <a class="navlink" id="nav-polls" style="display:none;" href="polls.html">Polls</a>
       <a class="navlink" id="nav-organize" style="display:none;" href="organize.html">Organize Event</a>
-      <a class="navlink active" id="nav-admin" style="display:none;" href="admin.html">Admin Review</a>
+      <a class="navlink" id="nav-admin" style="display:none;" href="admin.html">Admin Review</a>
+      <a class="navlink" id="nav-approvals" style="display:none;" href="approvals.html">Approvals</a>
       <a class="navlink" id="nav-login" style="display:none;" href="login.html">Login</a>
       <a class="navlink" id="nav-register" style="display:none;" href="register.html">Create Account</a>
       <button class="navlink" id="nav-logout" style="display:none;">Logout</button>
@@ -25,11 +26,19 @@
   </div>
 
   <div class="page">
-    <h1 class="page-title">Admin Review</h1>
-    <p class="subtitle" id="admin-msg">Pending event submissions.</p>
-    <div id="pending-list"></div>
+    <h1 class="page-title">Verify your mail</h1>
+    <div class="note form-box">
+      <p>We sent a verification link to <strong id="v-email">your college mail</strong>. Open the mail, click the link, then press the button below.</p>
+      <p class="field-hint">Can't see it? Check spam or promotions. College mailboxes sometimes delay it by a few minutes.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+        <button class="btn" id="v-check">I've verified</button>
+        <button class="btn secondary" id="v-resend">Resend mail</button>
+        <button class="btn secondary" id="v-switch">Use another account</button>
+      </div>
+      <div id="v-msg" class="form-msg" style="display:none;"></div>
+    </div>
   </div>
 
-  <script type="module" src="js/admin.js"></script>
+  <script type="module" src="js/verify.js"></script>
 </body>
 </html>

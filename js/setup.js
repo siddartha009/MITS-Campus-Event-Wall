@@ -5,11 +5,9 @@ import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/
 
 // Must match the email list in isAdminEmail() inside firestore.rules
 const ADMIN_EMAIL = "admin@mits.demo";
+// Students now register themselves with their @mits.ac.in mail, so setup only creates the admin.
 const ACCOUNTS = [
-  { name: "Admin",      rollNo: "ADMIN", email: ADMIN_EMAIL,        role: "admin" },
-  { name: "Organizer 1", rollNo: "MITS001", email: "user1@mits.demo", role: "organizer" },
-  { name: "Organizer 2", rollNo: "MITS002", email: "user2@mits.demo", role: "organizer" },
-  { name: "Organizer 3", rollNo: "MITS003", email: "user3@mits.demo", role: "organizer" }
+  { name: "Admin", rollNo: "ADMIN", email: ADMIN_EMAIL, role: "admin" }
 ];
 
 document.getElementById("acct-list").innerHTML =

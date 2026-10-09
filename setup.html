@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>One-time Setup — Campus Event Wall</title>
+<meta name="theme-color" content="#5e3f22">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -12,14 +13,14 @@
   <div class="page">
     <h1 class="page-title">One-time Setup</h1>
     <div class="note form-box">
-      <p class="subtitle">Creates 1 admin + 3 organizer accounts in your Firebase project. Delete this page (setup.html, js/setup.js) after you've run it.</p>
+      <p class="subtitle">Creates the admin account in your Firebase project (students register themselves with their college mail). Delete this page (setup.html, js/setup.js) after you've run it.</p>
       <ul id="acct-list" style="padding-left:18px;line-height:1.7;"></ul>
-      <label>Password for all four accounts</label>
+      <label>Password for the admin account</label>
       <div class="password-field">
         <input id="s-password" type="text" value="Mits@2026">
         <button type="button" class="toggle-password" id="s-toggle">Hide</button>
       </div>
-      <button class="btn" id="s-run" style="margin-top:18px;">Create Accounts</button>
+      <button class="btn" id="s-run" style="margin-top:18px;">Create Admin Account</button>
       <div id="s-log" style="margin-top:14px;font-size:.9em;line-height:1.7;"></div>
     </div>
   </div>

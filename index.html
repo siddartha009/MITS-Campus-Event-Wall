@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Campus Event Wall — MITS Madanapalle</title>
+<meta name="theme-color" content="#5e3f22">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -12,45 +13,72 @@
     <nav>
       <a class="navlink active" href="index.html">Home</a>
       <a class="navlink" href="calendar.html">Calendar</a>
-      <a class="navlink" id="nav-organize" href="organize.html">Organize Event</a>
-      <a class="navlink" id="nav-admin" href="admin.html">Admin Review</a>
-      <a class="navlink" id="nav-login" href="login.html">Login</a>
-      <a class="navlink" id="nav-register" href="register.html">Create Account</a>
+      <a class="navlink" id="nav-polls" style="display:none;" href="polls.html">Polls</a>
+      <a class="navlink" id="nav-organize" style="display:none;" href="organize.html">Organize Event</a>
+      <a class="navlink" id="nav-admin" style="display:none;" href="admin.html">Admin Review</a>
+      <a class="navlink" id="nav-approvals" style="display:none;" href="approvals.html">Approvals</a>
+      <a class="navlink" id="nav-login" style="display:none;" href="login.html">Login</a>
+      <a class="navlink" id="nav-register" style="display:none;" href="register.html">Create Account</a>
       <button class="navlink" id="nav-logout" style="display:none;">Logout</button>
       <span class="user-pill" id="nav-user-pill" style="display:none;"></span>
       <a class="navlink" href="https://mits.ac.in" target="_blank" rel="noopener">MITS Site</a>
     </nav>
   </div>
 
-  <div class="page">
-    <h1 class="page-title">The Wall</h1>
-    <p class="subtitle">Everything happening around campus — pinned live.</p>
-
-    <div class="controls-row">
-      <input class="search-input" id="search" placeholder="Search events by title or description...">
-      <div id="chip-row" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+  <div class="page wide">
+    <!-- Row 1: title (left) + College / Inter-college (right) -->
+    <div class="home-head">
+      <div>
+        <h1 class="page-title">The Wall</h1>
+        <p class="subtitle">Everything happening around campus — pinned live.</p>
+      </div>
+      <div class="scope-switch" role="tablist" aria-label="Event scope">
+        <button class="scope-btn active" data-scope="college" role="tab" aria-selected="true" title="College-wide and department events">College level</button>
+        <button class="scope-btn" data-scope="inter" role="tab" aria-selected="false" title="Events with other colleges">Inter-college</button>
+      </div>
     </div>
 
-    <div class="home-tabs" id="home-tabs" role="tablist">
-      <button class="tab-btn active" data-tab="highlights" role="tab" aria-selected="true">
-        <span class="tab-icon">⭐</span><span class="tab-label">Highlights</span>
-      </button>
-      <button class="tab-btn" data-tab="upcoming" role="tab" aria-selected="false">
-        <span class="tab-icon">📅</span><span class="tab-label">Upcoming</span>
-      </button>
-      <button class="tab-btn" data-tab="completed" role="tab" aria-selected="false">
-        <span class="tab-icon">✅</span><span class="tab-label">Completed</span>
-      </button>
+    <!-- Row 2: Highlights / Upcoming / Completed (left) + College-wide / Department toggle (right corner) -->
+    <div class="home-row">
+      <div class="home-tabs" id="home-tabs" role="tablist">
+        <button class="tab-btn active" data-tab="highlights" role="tab" aria-selected="true">
+          <span class="tab-icon">⭐</span><span class="tab-label">Highlights</span>
+        </button>
+        <button class="tab-btn" data-tab="upcoming" role="tab" aria-selected="false">
+          <span class="tab-icon">📅</span><span class="tab-label">Upcoming</span>
+        </button>
+        <button class="tab-btn" data-tab="completed" role="tab" aria-selected="false">
+          <span class="tab-icon">✅</span><span class="tab-label">Completed</span>
+        </button>
+      </div>
+
+      <div class="level-box" id="level-box">
+        <div class="level-toggle" role="tablist" aria-label="College level or department">
+          <button class="level-btn active" data-sub="college" role="tab" aria-selected="true">College-wide</button>
+          <div class="level-btn dept-seg" id="dept-seg" data-sub="department" role="tab" aria-selected="false">
+            <span class="dept-label">Dept:</span>
+            <select id="dept-select" class="dept-pick" aria-label="Choose department"></select>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="tab-panel" id="panel-highlights">
-      <div class="event-grid" id="highlights-grid"></div>
+    <!-- Row 3: category tabs (same for both levels) + search -->
+    <div class="cat-row" id="cat-row">
+      <div class="cat-tabs" id="cat-tabs" role="tablist" aria-label="Category"></div>
+      <input class="search-input" id="search" type="search" placeholder="🔍 Search events..." aria-label="Search events">
     </div>
-    <div class="tab-panel" id="panel-upcoming" hidden>
-      <div class="event-grid" id="upcoming-grid"></div>
-    </div>
-    <div class="tab-panel" id="panel-completed" hidden>
-      <div class="event-grid" id="completed-grid"></div>
+
+    <div class="board" id="board" aria-label="Events">
+      <div class="tab-panel" id="panel-highlights">
+        <div class="event-grid" id="highlights-grid"></div>
+      </div>
+      <div class="tab-panel" id="panel-upcoming" hidden>
+        <div class="event-grid" id="upcoming-grid"></div>
+      </div>
+      <div class="tab-panel" id="panel-completed" hidden>
+        <div class="event-grid" id="completed-grid"></div>
+      </div>
     </div>
   </div>
 

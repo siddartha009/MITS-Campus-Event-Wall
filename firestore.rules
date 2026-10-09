@@ -2,6 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ---------- who is who ----------
     function isSignedIn() {
       return request.auth != null;
     }
@@ -10,11 +11,49 @@ service cloud.firestore {
     function isAdminEmail() {
       return isSignedIn() && request.auth.token.email in ["admin@mits.demo"];
     }
+    function hasMyDoc() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function myDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
     function isAdmin() {
-      return isAdminEmail() ||
-        (isSignedIn() &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin");
+      return isAdminEmail() || (hasMyDoc() && myDoc().data.role == "admin");
+    }
+
+    // Students: 10 letters/digits + @mits.ac.in (keep in sync with COLLEGE_EMAIL_RE in js/common.js).
+    function hasCollegeEmail() {
+      return isSignedIn() && request.auth.token.email != null
+        && request.auth.token.email.matches('^[a-zA-Z0-9]{10}@mits\\.ac\\.in$');
+    }
+    // Faculty: any other @mits.ac.in address (keep in sync with FACULTY_EMAIL_RE in js/common.js).
+    function hasFacultyEmail() {
+      return isSignedIn() && request.auth.token.email != null
+        && request.auth.token.email.matches('^[a-zA-Z0-9._-]{2,40}@mits\\.ac\\.in$');
+    }
+    // A student counts once they have clicked the link in the verification mail.
+    function isVerifiedStudent() {
+      return hasCollegeEmail() && request.auth.token.email_verified == true;
+    }
+    // Faculty count once their mail is verified AND their HOD approved them.
+    function isApprovedFaculty() {
+      return hasFacultyEmail() && request.auth.token.email_verified == true && hasMyDoc()
+        && (myDoc().data.role == "faculty" || myDoc().data.role == "hod")
+        && myDoc().data.status == "approved";
+    }
+    function isHod() {
+      return hasFacultyEmail() && request.auth.token.email_verified == true && hasMyDoc()
+        && myDoc().data.role == "hod" && myDoc().data.status == "approved";
+    }
+    function isMember() {
+      return isVerifiedStudent() || isApprovedFaculty();
+    }
+    // May like, comment and organize: members and the admin.
+    function canInteract() {
+      return isMember() || isAdmin();
+    }
+    function validDept(d) {
+      return d is string && d.size() > 1 && d.size() <= 40;
     }
 
     // event.date is stored as "YYYY-MM-DD". True once that day has started (UTC).
@@ -23,22 +62,79 @@ service cloud.firestore {
       return timestamp.date(int(p[0]), int(p[1]), int(p[2])) <= request.time;
     }
 
+    // ---------- users ----------
     match /users/{uid} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == uid
-                    && (request.resource.data.role == "organizer"
-                        || (request.resource.data.role == "admin" && isAdminEmail()));
-      allow update, delete: if false; // role changes done manually in console
+      // profiles hold roll numbers and mails: owner, admin, and an HOD (for their own department's faculty) only
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin()
+                    || (isHod() && resource.data.role == "faculty"
+                        && resource.data.department == myDoc().data.department));
+
+      allow create: if isSignedIn() && request.auth.uid == uid && (
+                    // student
+                    (hasCollegeEmail()
+                      && request.resource.data.keys().hasOnly(["name", "rollNo", "email", "role", "department"])
+                      && request.resource.data.role == "student"
+                      && request.resource.data.email == request.auth.token.email
+                      && request.resource.data.rollNo.lower() == request.auth.token.email.split("@")[0].lower()
+                      && validDept(request.resource.data.department)
+                      && request.resource.data.name is string && request.resource.data.name.size() > 0
+                      && request.resource.data.name.size() <= 80)
+                    // faculty: starts pending until the HOD approves
+                    || (hasFacultyEmail()
+                      && request.resource.data.keys().hasOnly(["name", "email", "role", "department", "status", "mailVerified"])
+                      && request.resource.data.role == "faculty"
+                      && request.resource.data.status == "pending"
+                      && request.resource.data.mailVerified == false
+                      && request.resource.data.email == request.auth.token.email
+                      && validDept(request.resource.data.department)
+                      && request.resource.data.name is string && request.resource.data.name.size() > 0
+                      && request.resource.data.name.size() <= 80)
+                    // the admin account (created once from setup.html)
+                    || (request.resource.data.keys().hasOnly(["name", "rollNo", "email", "role"])
+                      && request.resource.data.role == "admin" && isAdminEmail())
+                  );
+
+      allow update: if isSignedIn() && (
+                    // faculty flag their own mail as verified (only possible once the token says so)
+                    (request.auth.uid == uid && request.auth.token.email_verified == true
+                      && resource.data.role in ["faculty", "hod"]
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["mailVerified"])
+                      && request.resource.data.mailVerified == true)
+                    // admin: approve/reject faculty, appoint or remove HODs
+                    || (isAdmin() && resource.data.role in ["faculty", "hod"]
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role", "status"])
+                      && request.resource.data.role in ["faculty", "hod"]
+                      && request.resource.data.status in ["approved", "rejected", "pending"])
+                    // HOD: approve/reject faculty of their own department, after the mail is verified
+                    || (isHod() && resource.data.role == "faculty" && resource.data.mailVerified == true
+                      && resource.data.department == myDoc().data.department
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"])
+                      && request.resource.data.status in ["approved", "rejected"])
+                  );
+      allow delete: if false;
     }
 
+    // ---------- events ----------
     match /events/{eventId} {
+      // The wall is public: anyone can read approved events. Organizers see their own pending ones.
       allow read: if resource.data.status == "approved"
                   || (isSignedIn() && resource.data.organizerId == request.auth.uid)
                   || isAdmin();
 
-      allow create: if isSignedIn()
+      allow create: if canInteract()
                     && request.resource.data.organizerId == request.auth.uid
-                    && request.resource.data.status == "pending";
+                    && request.resource.data.status == "pending"
+                    && request.resource.data.type in ["Fest", "Cultural", "Sports", "Hackathon", "Workshop", "Seminar",
+                                                      "Competition", "Club", "Career", "Camp", "Deadline", "Other"]
+                    && request.resource.data.level in ["department", "college", "inter-college"]
+                    && request.resource.data.likedBy.size() == 0
+                    && (request.resource.data.level != "department"
+                        || (request.resource.data.department is string
+                            && request.resource.data.department.size() > 1))
+                    && (request.resource.data.level != "inter-college"
+                        || (request.resource.data.interCollege is map
+                            && request.resource.data.interCollege.hostCollege is string
+                            && request.resource.data.interCollege.hostCollege.size() > 1));
 
       // admin: approve/reject (status change or delete)
       allow update: if isAdmin()
@@ -47,21 +143,132 @@ service cloud.firestore {
 
       allow delete: if isAdmin();
 
-      // like/unlike: any signed-in user may toggle only their own uid in likedBy
-      allow update: if isSignedIn()
+      // like/unlike: members toggle only their own uid in likedBy
+      allow update: if canInteract()
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["likedBy"])
                     && request.resource.data.likedBy.toSet()
                          .difference(resource.data.likedBy.toSet())
-                         .difference([request.auth.uid]).size() == 0
+                         .difference([request.auth.uid].toSet()).size() == 0
                     && resource.data.likedBy.toSet()
                          .difference(request.resource.data.likedBy.toSet())
-                         .difference([request.auth.uid]).size() == 0;
+                         .difference([request.auth.uid].toSet()).size() == 0;
 
       // recap: only the organizer, and only once the event's date has arrived
-      allow update: if isSignedIn()
+      allow update: if canInteract()
                     && resource.data.organizerId == request.auth.uid
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["recap"])
                     && eventDateReached();
+
+      // comments: members read and write (names and roll numbers aren't shown to the public)
+      match /comments/{commentId} {
+        allow read: if canInteract()
+                    && (get(/databases/$(database)/documents/events/$(eventId)).data.status == "approved"
+                        || isAdmin());
+        allow create: if canInteract()
+                      && get(/databases/$(database)/documents/events/$(eventId)).data.status == "approved"
+                      && request.resource.data.keys().hasOnly(["uid", "name", "rollNo", "text", "createdAt"])
+                      && request.resource.data.uid == request.auth.uid
+                      && request.resource.data.name == myDoc().data.name
+                      && request.resource.data.get("rollNo", "") in [myDoc().data.get("rollNo", ""), ""]
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 300
+                      && request.resource.data.createdAt == request.time;
+        allow update: if false;
+        allow delete: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      }
+    }
+
+    // ---------- polls (created by the admin; members vote) ----------
+    function pollData(pid) {
+      return get(/databases/$(database)/documents/polls/$(pid)).data;
+    }
+    function pollOpen(p) {
+      return p.closedAt == null && (p.endsAt == null || request.time < p.endsAt);
+    }
+    // college polls: everyone; department polls: that department's students and faculty
+    function inPollScope(p) {
+      return p.scope == "college" || (hasMyDoc() && myDoc().data.department == p.department);
+    }
+    function voteDoc(pid) {
+      return /databases/$(database)/documents/polls/$(pid)/votes/$(request.auth.uid);
+    }
+    // the tally for option i may rise by exactly 1 if (and only if) the voter picked i in the vote written in the same batch
+    function bump(newV, oldV, i, pid) {
+      return newV - oldV == (i in getAfter(voteDoc(pid)).data.choices ? 1 : 0);
+    }
+
+    match /polls/{pid} {
+      allow read: if canInteract()
+                  && (isAdmin() || resource.data.scope == "college"
+                      || (hasMyDoc() && myDoc().data.department == resource.data.department));
+
+      allow create: if isAdmin()
+                    && request.resource.data.keys().hasOnly(["question", "options", "scope", "department", "multi",
+                                                             "showLive", "endsAt", "closedAt", "createdBy", "createdAt"])
+                    && request.resource.data.question is string
+                    && request.resource.data.question.size() > 2 && request.resource.data.question.size() <= 200
+                    && request.resource.data.options is list
+                    && request.resource.data.options.size() >= 2 && request.resource.data.options.size() <= 10
+                    && request.resource.data.scope in ["college", "department"]
+                    && (request.resource.data.scope == "college" || validDept(request.resource.data.department))
+                    && request.resource.data.multi is bool
+                    && request.resource.data.showLive is bool
+                    && request.resource.data.closedAt == null
+                    && (request.resource.data.endsAt == null
+                        || (request.resource.data.endsAt is timestamp && request.resource.data.endsAt > request.time))
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.createdAt == request.time;
+
+      // admin can close a poll early or flip live results; nothing else changes after publishing
+      allow update: if isAdmin()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["closedAt", "showLive"])
+                    && (request.resource.data.closedAt == resource.data.closedAt
+                        || request.resource.data.closedAt == request.time);
+
+      allow delete: if isAdmin();
+
+      // one final vote per member; only the voter and the admin can read it
+      match /votes/{uid} {
+        allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+        allow create: if request.auth.uid == uid
+                      && isMember()
+                      && pollOpen(pollData(pid))
+                      && inPollScope(pollData(pid))
+                      && request.resource.data.keys().hasOnly(["choices", "at"])
+                      && request.resource.data.choices is list
+                      && request.resource.data.choices.size() >= 1
+                      && request.resource.data.choices.size() <= (pollData(pid).multi ? 10 : 1)
+                      && request.resource.data.choices.toSet().size() == request.resource.data.choices.size()
+                      && request.resource.data.choices.toSet().difference([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].toSet()).size() == 0
+                      && request.resource.data.at == request.time;
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+
+      // vote counts. Suspense mode: not readable (by anyone but the admin) until the poll has ended.
+      match /tally/{t} {
+        allow read: if isAdmin()
+                    || (canInteract() && inPollScope(pollData(pid))
+                        && (pollData(pid).showLive == true || !pollOpen(pollData(pid))));
+        allow create: if isAdmin();
+        allow update: if isMember() && t == "counts"
+                      && pollOpen(pollData(pid)) && inPollScope(pollData(pid))
+                      && !exists(voteDoc(pid)) && existsAfter(voteDoc(pid))
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(["c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9"])
+                      && bump(request.resource.data.c0, resource.data.c0, 0, pid)
+                      && bump(request.resource.data.c1, resource.data.c1, 1, pid)
+                      && bump(request.resource.data.c2, resource.data.c2, 2, pid)
+                      && bump(request.resource.data.c3, resource.data.c3, 3, pid)
+                      && bump(request.resource.data.c4, resource.data.c4, 4, pid)
+                      && bump(request.resource.data.c5, resource.data.c5, 5, pid)
+                      && bump(request.resource.data.c6, resource.data.c6, 6, pid)
+                      && bump(request.resource.data.c7, resource.data.c7, 7, pid)
+                      && bump(request.resource.data.c8, resource.data.c8, 8, pid)
+                      && bump(request.resource.data.c9, resource.data.c9, 9, pid);
+        allow delete: if isAdmin();
+      }
     }
   }
 }

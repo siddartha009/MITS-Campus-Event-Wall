@@ -3,7 +3,7 @@ import {
   getAuth, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc
+  getFirestore, doc, getDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -61,7 +61,8 @@ export function fileToCompressedDataURL(file, maxDim = 900, quality = 0.72) {
   });
 }
 
-export const TYPES = ["Fest", "Deadline", "Seminar", "Hackathon", "Camp"];
+// Event categories. Keep in sync with the type list in firestore.rules and the colours in css/style.css + js/calendar.js.
+export const TYPES = ["Fest", "Cultural", "Sports", "Hackathon", "Workshop", "Seminar", "Competition", "Club", "Career", "Camp", "Deadline", "Other"];
 
 // current logged-in profile (uid, name, rollNo, email, role) — populated after auth resolves
 export let currentUser = null;
@@ -77,6 +78,12 @@ if (auth) {
     try {
       const snap = await getDoc(doc(db, "users", user.uid));
       if (snap.exists()) currentProfile = { uid: user.uid, ...snap.data() };
+      // Faculty: once their mail is verified, flag it so the HOD's approval list shows them.
+      // (The rules only allow this flag to flip when the sign-in token says the mail is verified.)
+      if (currentProfile && ["faculty", "hod"].includes(currentProfile.role) && !currentProfile.mailVerified && user.emailVerified) {
+        updateDoc(doc(db, "users", user.uid), { mailVerified: true })
+          .then(() => { currentProfile.mailVerified = true; }).catch(() => {});
+      }
     } catch (e) { console.error("profile load failed", e); }
   }
   renderNavAuthState();
@@ -86,6 +93,7 @@ if (auth) {
   // Firebase never initialized (bad/missing config) — resolve authReady anyway so
   // requireLogin()/requireAdmin() don't hang forever waiting for an auth state
   // that will never arrive.
+  renderNavAuthState();
   authReadyResolve();
 }
 
@@ -96,6 +104,8 @@ function renderNavAuthState() {
   const userPill = document.getElementById("nav-user-pill");
   const organizeLink = document.getElementById("nav-organize");
   const adminLink = document.getElementById("nav-admin");
+  const pollsLink = document.getElementById("nav-polls");
+  const approvalsLink = document.getElementById("nav-approvals");
 
   const loggedIn = !!currentUser;
   if (loginLink) loginLink.style.display = loggedIn ? "none" : "";
@@ -105,8 +115,11 @@ function renderNavAuthState() {
     userPill.style.display = loggedIn ? "" : "none";
     userPill.textContent = currentProfile ? currentProfile.name : (currentUser ? currentUser.email : "");
   }
-  if (organizeLink) organizeLink.style.display = loggedIn ? "" : "none";
+  if (organizeLink) organizeLink.style.display = canAccess() ? "" : "none";
   if (adminLink) adminLink.style.display = (currentProfile && currentProfile.role === "admin") ? "" : "none";
+  if (pollsLink) pollsLink.style.display = (canAccess() || isAdminProfile()) ? "" : "none";
+  if (approvalsLink) approvalsLink.style.display = (isAdminProfile() || isHodProfile()) ? "" : "none";
+  renderStatusBanner();
 
   if (logoutBtn) logoutBtn.onclick = () => signOut(auth);
 }
@@ -199,5 +212,115 @@ export function wirePasswordToggle(btnId, inputId) {
     const showing = input.type === "text";
     input.type = showing ? "password" : "text";
     btn.textContent = showing ? "Show" : "Hide";
+  });
+}
+
+
+// ---- college identity, verification and event levels ----
+// Edit this list to match your departments. It is only used by the UI
+// (registration dropdown, organizer form, Home filter) — the rules don't need it.
+export const DEPARTMENTS = [
+  "CSE", "CSE (AI & ML)", "CSE (Data Science)", "CSE (Cyber Security)", "IT",
+  "ECE", "EEE", "Mechanical", "Civil", "MBA", "MCA", "Basic Sciences & Humanities"
+];
+
+// 10 letters/digits followed by @mits.ac.in. Keep in sync with hasCollegeEmail() in firestore.rules.
+export const COLLEGE_EMAIL_RE = /^[a-z0-9]{10}@mits\.ac\.in$/i;
+export function isCollegeEmail(email) {
+  return COLLEGE_EMAIL_RE.test((email || "").trim());
+}
+
+// Faculty use any @mits.ac.in address (not the 10-character student ID). Keep in sync with hasFacultyEmail() in firestore.rules.
+export const FACULTY_EMAIL_RE = /^[a-z0-9._-]{2,40}@mits\.ac\.in$/i;
+export function isFacultyEmail(email) {
+  return FACULTY_EMAIL_RE.test((email || "").trim());
+}
+
+export function isAdminProfile() {
+  return !!currentProfile && currentProfile.role === "admin";
+}
+export function isHodProfile() {
+  return !!currentProfile && currentProfile.role === "hod" && currentProfile.status === "approved";
+}
+
+// May like, comment, vote and organize: admin, verified students, and verified faculty
+// that their HOD has approved. (Viewing events is open to everyone.)
+export function canAccess() {
+  if (!currentUser) return false;
+  if (isAdminProfile()) return true;
+  if (!currentUser.emailVerified || !currentProfile) return false;
+  if (currentProfile.role === "faculty" || currentProfile.role === "hod") return currentProfile.status === "approved";
+  return true; // students
+}
+
+function renderStatusBanner() {
+  const old = document.getElementById("status-banner");
+  if (old) old.remove();
+  if (!currentUser || isAdminProfile() || canAccess() || /verify\.html$/.test(location.pathname)) return;
+  let html = "";
+  if (!currentUser.emailVerified) html = `Verify your mail to like, comment and vote. <a href="verify.html">Verify now</a>`;
+  else if (currentProfile && currentProfile.status === "pending") html = "Your faculty account is waiting for your HOD's approval. You can browse the wall now; liking, commenting and voting unlock once you're approved.";
+  else if (currentProfile && currentProfile.status === "rejected") html = "Your faculty request wasn't approved. Please contact your department's HOD.";
+  if (!html) return;
+  const bar = document.createElement("div");
+  bar.id = "status-banner"; bar.className = "status-banner"; bar.innerHTML = html;
+  const nav = document.querySelector(".navbar");
+  if (nav) nav.insertAdjacentElement("afterend", bar);
+}
+
+export function eventLevel(ev) {
+  return ev.level || "college"; // events created before levels existed count as college-wide
+}
+
+export function levelLabel(ev) {
+  const l = eventLevel(ev);
+  if (l === "department") return (ev.department || "Department") + " only";
+  if (l === "inter-college") {
+    const host = ev.interCollege && ev.interCollege.hostCollege;
+    return "Inter-college" + (host ? " · " + host : "");
+  }
+  return "College-wide";
+}
+
+// Department events are visible to everyone signed in, but only that department participates.
+export function canParticipate(ev) {
+  if (eventLevel(ev) !== "department") return true;
+  if (!currentUser) return false;
+  if (currentUser.uid === ev.organizerId || isAdminProfile()) return true;
+  return !!currentProfile && currentProfile.department === ev.department;
+}
+
+// Only http(s) links are allowed through; anything else (javascript:, data:) becomes "".
+export function safeUrl(u) {
+  try {
+    const x = new URL(String(u || "").trim());
+    return (x.protocol === "https:" || x.protocol === "http:") ? x.href : "";
+  } catch { return ""; }
+}
+
+// Call at the top of a members-only page (polls). Resolves true when the visitor may use it;
+// otherwise swaps the page content for a prompt that says what's missing.
+export function gateAccess() {
+  return authReady.then(() => {
+    if (canAccess()) return true;
+    const page = document.querySelector(".page");
+    if (page) {
+      [...page.children].forEach(el => { if (!el.matches("h1.page-title")) el.style.display = "none"; });
+      let inner;
+      if (!currentUser) inner = `<h2>Log in with your college mail</h2>
+        <p>This page is for verified MITS students and faculty. Log in with your @mits.ac.in mail to continue.</p>
+        <a class="btn" href="login.html">Log in</a> <a class="btn secondary" href="register.html">Create account</a>`;
+      else if (!currentUser.emailVerified) inner = `<h2>Verify your MITS mail</h2>
+        <p>We sent a verification link to <strong>${escapeHtml(currentUser.email)}</strong>. Open it, then come back here.</p>
+        <a class="btn" href="verify.html">Verify now</a>`;
+      else inner = `<h2>Waiting for approval</h2>
+        <p>${currentProfile && currentProfile.status === "rejected" ? "Your faculty request wasn't approved. Please contact your department's HOD." : "Your HOD hasn't approved your faculty account yet. This page opens once they do."}</p>
+        <a class="btn secondary" href="index.html">Back to the wall</a>`;
+      const box = document.createElement("div");
+      box.className = "note gate";
+      box.innerHTML = inner;
+      page.appendChild(box);
+    }
+    return false;
   });
 }

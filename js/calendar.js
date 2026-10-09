@@ -1,11 +1,56 @@
-import { db, isUpcoming, isRecentlyCompleted, escapeHtml } from "./common.js";
+import { db, isUpcoming, isRecentlyCompleted, escapeHtml, DEPARTMENTS, eventLevel, currentProfile, authReady } from "./common.js";
+import { loadView, saveView } from "./view-state.js";
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { openEventModal } from "./event-detail.js";
 import { getDemoEvents, showDemoBanner, ENABLE_DEMO_FALLBACK } from "./demo-data.js";
 
-const TYPE_COLORS = { Fest: "#FF6B9D", Deadline: "#FF5252", Seminar: "#3DA8F5", Hackathon: "#8E5CFF", Camp: "#2ECC71" };
+const TYPE_COLORS = { Fest: "#d6457c", Cultural: "#b04bb8", Sports: "#e07b1f", Hackathon: "#6f4bd8", Workshop: "#0f8a8a", Seminar: "#2f7fd0", Competition: "#b8860b", Club: "#5b6b2e", Career: "#1f4e79", Camp: "#1f9558", Deadline: "#d63a32", Other: "#7a6a58" };
 
 let allEvents = [];
+
+// Level / department are shared with the Wall (view-state.js).
+const saved = loadView();
+let calTab = saved.scope === "inter" ? "inter" : saved.sub; // college | department | inter
+let calDept = DEPARTMENTS.includes(saved.dept) ? saved.dept : DEPARTMENTS[0];
+let deptFromUser = DEPARTMENTS.includes(saved.dept);
+
+function inTab(ev, tab) {
+  const lvl = eventLevel(ev);
+  if (tab === "inter") return lvl === "inter-college";
+  if (tab === "department") return lvl === "department" && ev.department === calDept;
+  return lvl === "college";
+}
+const calSel = document.getElementById("cal-dept");
+calSel.innerHTML = DEPARTMENTS.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
+function saveTab() { saveView({ scope: calTab === "inter" ? "inter" : "college", sub: calTab === "department" ? "department" : "college", dept: calDept }); }
+function syncTabs() {
+  calSel.value = calDept;
+  document.querySelectorAll("[data-cal]").forEach(el => {
+    const on = el.dataset.cal === calTab;
+    el.classList.toggle("active", on);
+    el.setAttribute("aria-selected", String(on));
+  });
+  const pool = allEvents.filter(ev => isUpcoming(ev) || isRecentlyCompleted(ev));
+  ["college", "department", "inter"].forEach(t => {
+    document.querySelector(`[data-n="${t}"]`).textContent = pool.filter(ev => inTab(ev, t)).length;
+  });
+}
+function pickTab(t) {
+  if (t === calTab) return;
+  calTab = t; saveTab(); document.getElementById("day-panel").innerHTML = ""; syncTabs(); renderMonth();
+}
+document.querySelectorAll("[data-cal]").forEach(b => b.addEventListener("click", (e) => { if (!e.target.closest("select")) pickTab(b.dataset.cal); }));
+calSel.addEventListener("pointerdown", () => pickTab("department"));
+calSel.addEventListener("keydown", () => pickTab("department"));
+calSel.addEventListener("change", () => {
+  calDept = calSel.value; deptFromUser = true; calTab = "department"; saveTab();
+  document.getElementById("day-panel").innerHTML = ""; syncTabs(); renderMonth();
+});
+authReady.then(() => {
+  const mine = currentProfile && currentProfile.department;
+  if (!deptFromUser && mine && DEPARTMENTS.includes(mine)) { calDept = mine; syncTabs(); renderMonth(); }
+});
+
 let viewDate = new Date();
 viewDate.setDate(1);
 
@@ -18,7 +63,7 @@ const dow = document.getElementById("cal-dow-row");
 });
 
 function eventsInRangeOnly() {
-  return allEvents.filter(ev => isUpcoming(ev) || isRecentlyCompleted(ev));
+  return allEvents.filter(ev => (isUpcoming(ev) || isRecentlyCompleted(ev)) && inTab(ev, calTab));
 }
 
 function eventsOnDate(dateStr) {
@@ -47,7 +92,9 @@ function renderMonth() {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const dayEvents = inRange.filter(e => e.date === dateStr);
     const cell = document.createElement("div");
-    cell.className = "cal-day" + (dayEvents.length ? " has-events" : "");
+    const now = new Date();
+    const isToday = now.getFullYear() === year && now.getMonth() === month && now.getDate() === day;
+    cell.className = "cal-day" + (dayEvents.length ? " has-events" : "") + (isToday ? " today" : "");
     cell.innerHTML = `<div class="dnum">${day}</div>
       <div class="dot-row">${dayEvents.map(e => `<span class="dot" style="background:${TYPE_COLORS[e.type] || '#999'}"></span>`).join("")}</div>`;
     cell.addEventListener("click", () => showDayPanel(dateStr, dayEvents));
@@ -95,6 +142,7 @@ document.getElementById("next-month").onclick = () => { viewDate.setMonth(viewDa
 
 // Draw the empty grid/month-label right away so the calendar always looks
 // right even before (or if) the Firestore fetch below succeeds.
+syncTabs();
 renderMonth();
 
 async function loadEvents() {
@@ -106,6 +154,7 @@ async function loadEvents() {
     console.error("Failed to load events for calendar:", e);
   }
   if (ENABLE_DEMO_FALLBACK && !allEvents.length) { allEvents = getDemoEvents(); showDemoBanner(); }
+  syncTabs();
   renderMonth();
 }
 
